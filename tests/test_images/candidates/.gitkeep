@@ -1,0 +1,4 @@
+# Placeholder — place candidate images here.
+# Include images of the same person (to test true positives),
+# images of different people (to test true negatives),
+# and images with no faces (to test no-face handling).

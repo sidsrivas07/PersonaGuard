@@ -1,0 +1,16 @@
+# PersonaGuard Face-Matching Module — Dependencies
+#
+# Install with:  pip install -r requirements.txt
+#
+# Notes:
+#   - insightface downloads a ~300 MB model on first run
+#   - onnxruntime provides CPU inference (no GPU required)
+#   - opencv-python handles image I/O and format conversion
+
+insightface>=0.7.3
+onnxruntime>=1.16.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Development / Testing
+pytest>=7.4.0

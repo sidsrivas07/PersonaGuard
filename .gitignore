@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.env/
+.venv/
+
+# pytest
+.pytest_cache/
+.cache/
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Model weights / large binary files
+*.pt
+*.pth
+*.onnx
+*.bin
+*.h5
+*.pkl
+
+# Environment variables
+.env
+*.env.*
+
+# Logs
+*.log
+
+# Node (Frontend)
+node_modules/
+.next/
+dist/
+build/
