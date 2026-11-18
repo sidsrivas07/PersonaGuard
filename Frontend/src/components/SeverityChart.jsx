@@ -5,10 +5,10 @@ const COLORS = { Critical: 'var(--critical)', High: 'var(--high)', Medium: 'var(
 // Donut chart. `data` looks like [{ name: 'Critical', value: 4 }, ...]
 export default function SeverityChart({ data }) {
   return (
-    <div className="card">
+    <div className="card" role="region" aria-label="Open findings by severity">
       <h3>Open findings by severity</h3>
       <div className="chart-row">
-        <div style={{ width: 180, height: 180 }}>
+        <div style={{ width: 180, height: 180 }} role="img" aria-label="Severity distribution donut chart">
           <ResponsiveContainer>
             <PieChart>
               <Pie data={data} dataKey="value" nameKey="name" innerRadius={52} outerRadius={80} paddingAngle={2} stroke="none">

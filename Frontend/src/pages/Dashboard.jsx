@@ -21,22 +21,6 @@ function quickActionLabel(finding) {
   return 'Mark resolved';
 }
 
-// Small severity dot beside each finding
-function SevDot({ severity }) {
-  const colors = {
-    Critical: 'var(--critical)',
-    High: 'var(--high)',
-    Medium: 'var(--medium)',
-    Low: 'var(--low)',
-  };
-  return (
-    <span
-      style={{ width: 8, height: 8, borderRadius: '50%', background: colors[severity] || 'var(--muted)', display: 'inline-block', flexShrink: 0 }}
-      aria-label={severity}
-    />
-  );
-}
-
 export default function Dashboard() {
   const {
     profile, findings, openFindings, exposureScore,
@@ -106,7 +90,7 @@ export default function Dashboard() {
             <ul className="attention-list" role="list">
               {topFindings.map((f) => (
                 <li key={f.id} className="attention-item">
-                  <SevDot severity={f.severity} />
+                  <StatusBadge value={f.severity} />
                   <div className="attention-body">
                     <div
                       className="attention-title"
