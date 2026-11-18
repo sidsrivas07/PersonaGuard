@@ -82,8 +82,8 @@ export function AppProvider({ children }) {
     fetchBackendData();
   }, []);
 
-  // Theme configuration (system / light / dark)
-  const [theme, setTheme] = usePersistentState('pg_theme', 'system');
+  // Theme configuration (defaults to dark for privacy product)
+  const [theme, setTheme] = usePersistentState('pg_theme', 'dark');
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {

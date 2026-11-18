@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Line chart of the exposure score over past scans. Lower is safer.
-// Uses brand blue line with highlighted current (latest) point.
+// Uses brand orange line with highlighted current (latest) point.
 export default function ExposureTrendChart({ data }) {
   const lastIndex = (data && data.length > 0) ? data.length - 1 : -1;
 
