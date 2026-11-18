@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { fetchImageMatches, getSimulatedImageMatches } from '../services/scanService';
 import StatusBadge from '../components/StatusBadge';
 import DemoNotice from '../components/DemoNotice';
+import ScanSequence from '../components/ScanSequence';
 
 export default function Scans() {
   const { scans, scanState, runScan, profile, referencePhoto, setPage, setScanState } = useApp();
@@ -47,8 +48,14 @@ export default function Scans() {
 
       <div className="card stack">
         <div className="row between wrap">
-          <div className="row gap"><h3>Scan status</h3><StatusBadge value={scanState.status === 'ready' ? 'Ready' : scanState.status === 'scanning' ? 'Scanning' : scanState.status === 'completed' ? 'Completed' : 'Failed'} /></div>
-          <button className="btn primary" disabled={!canScan} onClick={() => runScan({ simulateFailure })}><Play size={16} />Start demonstration scan</button>
+          <div className="row gap">
+            <h3>Scan status</h3>
+            <StatusBadge value={scanState.status === 'ready' ? 'Ready' : scanState.status === 'scanning' ? 'Scanning' : scanState.status === 'completed' ? 'Completed' : 'Failed'} />
+          </div>
+          <button className="btn primary" disabled={!canScan} onClick={() => runScan({ simulateFailure })}>
+            <Play size={16} />
+            {scanning ? 'Audit running...' : 'Start demonstration scan'}
+          </button>
         </div>
 
         {!profile.consentGiven && (
@@ -57,14 +64,12 @@ export default function Scans() {
 
         <label className="check"><input type="checkbox" checked={simulateFailure} disabled={scanning} onChange={(e) => setSimulateFailure(e.target.checked)} />Make the next scan fail (to demonstrate the error state)</label>
 
-        {scanning && (
-          <div>
-            <div className="progress"><div className="progress-bar" style={{ width: `${scanState.progress}%` }} /></div>
-            <p className="muted small">{scanState.progress}% · Simulating: {scanState.currentSource}</p>
-          </div>
-        )}
-        {scanState.status === 'completed' && <div className="notice success"><CheckCircle2 size={16} />Simulated scan completed. The sample findings are unchanged. <button className="link" onClick={() => setPage('findings')}>View findings</button></div>}
-        {scanState.status === 'failed' && <div className="notice error"><AlertTriangle size={16} />{scanState.error} <button className="link" onClick={() => setScanState({ status: 'ready', progress: 0, currentSource: '', error: '' })}>Dismiss</button></div>}
+        {/* 6-Source Scan Sequence */}
+        <ScanSequence
+          scanState={scanState}
+          onDismiss={() => setScanState({ status: 'ready', progress: 0, currentSource: '', completedIndex: 0, error: '' })}
+          onViewFindings={() => setPage('findings')}
+        />
       </div>
 
       <div className="card">

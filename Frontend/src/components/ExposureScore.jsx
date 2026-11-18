@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from 'react';
+
 // Ring gauge for the 0-100 exposure score. Lower is safer.
 // Exposure gauge color follows the score band, NOT the brand color:
-// Low = teal, Moderate = yellow, Elevated = orange, Severe = red.
+// Low = teal, Moderate = amber, Elevated = orange, Severe = red.
 function describe(score) {
   if (score <= 30) return { label: 'Low',      gaugeColor: 'var(--gauge-low)' };
   if (score <= 55) return { label: 'Moderate', gaugeColor: 'var(--gauge-moderate)' };
@@ -15,7 +17,57 @@ export default function ExposureScore({ score }) {
   const { label, gaugeColor } = describe(score);
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
-  const filled = (score / 100) * circumference;
+
+  // Animated display score (draws in on mount, counts down on resolve)
+  const [displayScore, setDisplayScore] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return score;
+    }
+    return 0;
+  });
+  const [mounted, setMounted] = useState(false);
+  const prevScoreRef = useRef(score);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setDisplayScore(score);
+      setMounted(true);
+      prevScoreRef.current = score;
+      return;
+    }
+
+    const startVal = mounted ? prevScoreRef.current : 0;
+    const endVal = score;
+    const duration = mounted ? 600 : 800; // 800ms initial draw, 600ms count-down on resolve
+    const startTime = performance.now();
+
+    setMounted(true);
+    let animId;
+
+    const step = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out quad
+      const eased = progress * (2 - progress);
+      const current = startVal + (endVal - startVal) * eased;
+
+      setDisplayScore(Number.isInteger(score) ? Math.round(current) : Math.round(current * 10) / 10);
+
+      if (progress < 1) {
+        animId = requestAnimationFrame(step);
+      } else {
+        setDisplayScore(score);
+        prevScoreRef.current = score;
+      }
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [score]);
+
+  const targetFilled = (score / 100) * circumference;
+  const filled = mounted ? targetFilled : 0;
 
   const delta = score - PREV_SCORE;
   const deltaSign = delta < 0 ? '↓' : delta > 0 ? '↑' : '—';
@@ -33,7 +85,7 @@ export default function ExposureScore({ score }) {
       >
         {/* Track = border color */}
         <circle cx="80" cy="80" r={radius} fill="none" stroke="var(--gauge-track)" strokeWidth="13" />
-        {/* Arc */}
+        {/* Arc: draws in on mount and eases smoothly on resolve */}
         <circle
           cx="80" cy="80" r={radius}
           fill="none"
@@ -42,10 +94,12 @@ export default function ExposureScore({ score }) {
           strokeLinecap="round"
           strokeDasharray={`${filled} ${circumference}`}
           transform="rotate(-90 80 80)"
-          style={{ transition: 'stroke-dasharray .6s ease, stroke .3s' }}
+          style={{ transition: 'stroke-dasharray .8s cubic-bezier(0.16, 1, 0.3, 1), stroke .3s' }}
         />
-        {/* Score number */}
-        <text x="80" y="78" textAnchor="middle" className="score-number" fill="var(--text-heading)" fontSize="36" fontWeight="700">{score}</text>
+        {/* Score number with tabular numerals */}
+        <text x="80" y="78" textAnchor="middle" className="score-number" fill="var(--text-heading)" fontSize="36" fontWeight="700">
+          {displayScore}
+        </text>
         <text x="80" y="102" textAnchor="middle" fill="var(--muted)" fontSize="12">out of 100</text>
       </svg>
 

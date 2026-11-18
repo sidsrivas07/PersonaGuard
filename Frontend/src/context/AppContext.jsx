@@ -96,7 +96,7 @@ export function AppProvider({ children }) {
 
   // Reference photo kept in browser memory during audit session
   const [referencePhoto, setReferencePhoto] = useState(null);
-  const [scanState, setScanState] = useState({ status: 'ready', progress: 0, currentSource: '', error: '' });
+  const [scanState, setScanState] = useState({ status: 'ready', progress: 0, currentSource: '', completedIndex: 0, error: '' });
 
   // Dynamic calculations: exposureScore is strictly derived from open findings
   const openFindings = findings.filter((f) => f.status !== 'Resolved');
@@ -176,13 +176,14 @@ export function AppProvider({ children }) {
   // Run scan and persist to backend
   const runScan = async ({ simulateFailure = false } = {}) => {
     if (scanState.status === 'scanning') return;
-    setScanState({ status: 'scanning', progress: 0, currentSource: 'Starting...', error: '' });
+    setScanState({ status: 'scanning', progress: 0, currentSource: 'Starting...', completedIndex: 0, error: '' });
     const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
     try {
       const result = await startScan(profile, {
         simulateFailure,
-        onProgress: (progress, currentSource) => setScanState((s) => ({ ...s, progress, currentSource })),
+        onProgress: (progress, currentSource, completedIndex) =>
+          setScanState((s) => ({ ...s, progress, currentSource, completedIndex: completedIndex ?? s.completedIndex })),
       });
 
       // Save scan record in backend
@@ -230,7 +231,7 @@ export function AppProvider({ children }) {
     setSettings(initialSettings);
     setReferencePhoto(null);
     setBackendScore(null);
-    setScanState({ status: 'ready', progress: 0, currentSource: '', error: '' });
+    setScanState({ status: 'ready', progress: 0, currentSource: '', completedIndex: 0, error: '' });
   };
 
   const value = {

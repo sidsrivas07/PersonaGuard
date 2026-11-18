@@ -926,3 +926,92 @@ select { width: auto; }
   .stat-divider { display: none; }
   .stat-item { flex: 1 1 40%; }
 }
+
+/* ── PHASE 4: PURPOSEFUL MOTION & SCAN SEQUENCE ───────────────────── */
+
+/* Staggered Entrance Animations: fade and translate 8px, 40ms stagger */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card,
+.hero-card,
+.stats-strip {
+  animation: card-enter 0.35s ease-out backwards;
+}
+
+/* 40ms stagger between cards */
+.hero-row > :nth-child(1) { animation-delay: 0ms; }
+.hero-row > :nth-child(2) { animation-delay: 40ms; }
+.stats-strip              { animation-delay: 80ms; }
+.grid-2 > :nth-child(1)   { animation-delay: 120ms; }
+.grid-2 > :nth-child(2)   { animation-delay: 160ms; }
+
+/* ── SCAN SEQUENCE CHECKLIST ──────────────────────────────────────── */
+.scan-sequence {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  animation: card-enter 0.3s ease-out;
+  padding: var(--space-3) var(--space-4);
+}
+.scan-seq-header {
+  margin-bottom: 2px;
+}
+.scan-percent {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.scan-source-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.scan-source-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+.scan-source-item.is-current {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.scan-source-item.is-done {
+  color: var(--text);
+}
+.scan-source-item.is-failed {
+  background: rgba(229, 72, 77, 0.08);
+  border-color: rgba(229, 72, 77, 0.3);
+}
+.source-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.source-name {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

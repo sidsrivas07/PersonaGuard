@@ -8,6 +8,7 @@ import ExposureTrendChart from '../components/ExposureTrendChart';
 import FindingDetail from '../components/FindingDetail';
 import DemoNotice from '../components/DemoNotice';
 import StatusBadge from '../components/StatusBadge';
+import ScanSequence from '../components/ScanSequence';
 
 // Severity sort order for the "needs attention" list
 const ORDER = { Critical: 0, High: 1, Medium: 2, Low: 3 };
@@ -25,6 +26,7 @@ export default function Dashboard() {
   const {
     profile, findings, openFindings, exposureScore,
     severityCounts, trendData, setPage, runScan, setFindingStatus,
+    scanState, setScanState,
   } = useApp();
 
   const [selectedId, setSelectedId] = useState(null);
@@ -44,7 +46,9 @@ export default function Dashboard() {
     ? `${attentionCount} item${attentionCount !== 1 ? 's' : ''} need your attention`
     : 'Your footprint looks clean — keep it that way.';
 
-  const startScan = () => { setPage('scans'); runScan(); };
+  const startScan = () => {
+    runScan();
+  };
 
   // One-click resolve: marks finding as Resolved and lets the score recompute
   const resolveNow = (finding) => {
@@ -64,11 +68,23 @@ export default function Dashboard() {
           <h2>Welcome back, {profile.fullName.split(' ')[0]}</h2>
           <p className="muted" style={{ marginTop: 2 }}>{subtitle}</p>
         </div>
-        <button className="btn primary" onClick={startScan} aria-label="Run a new scan">
+        <button
+          className="btn primary"
+          onClick={startScan}
+          disabled={scanState.status === 'scanning'}
+          aria-label="Run a new scan"
+        >
           <Play size={15} aria-hidden="true" />
-          Run scan
+          {scanState.status === 'scanning' ? 'Scanning...' : 'Run scan'}
         </button>
       </div>
+
+      {/* ── Staged Scan Sequence Checklist ──────────────────────────── */}
+      <ScanSequence
+        scanState={scanState}
+        onDismiss={() => setScanState({ status: 'ready', progress: 0, currentSource: '', completedIndex: 0, error: '' })}
+        onViewFindings={() => setPage('findings')}
+      />
 
       {/* ── Hero Row: Score Gauge + Needs Attention ──────────────────── */}
       <div className="hero-row">

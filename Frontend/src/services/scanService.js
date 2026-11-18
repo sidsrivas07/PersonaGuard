@@ -8,35 +8,50 @@
 
 import { SOURCES, initialFindings, imageMatches } from '../data/mockData';
 
-const STEP_MS = 900; // time per simulated source
+const STEP_MS = 700; // 700ms per source gives a responsive ~4.2s full scan
+
+// Findings discovered per source during the audit
+export const SOURCE_FINDINGS_COUNT = {
+  'LinkedIn (public)': 4,
+  'Personal blog, 2019': 4,
+  'Breach database': 3,
+  'GitHub (public)': 3,
+  'Public web search': 11,
+  'Simulated demo dataset': 2,
+};
 
 /**
- * Simulated scan. Calls onProgress(percent, sourceName) after each source,
+ * Simulated scan. Calls onProgress(percent, sourceName, completedIndex) after each source,
  * then resolves with a scan summary. Rejects if simulateFailure is true.
  */
 export function startScan(profile, { simulateFailure = false, onProgress } = {}) {
   return new Promise((resolve, reject) => {
     let done = 0;
+    // Initial 0% progress call with first source
+    onProgress?.(0, SOURCES[0], 0);
+
     const timer = setInterval(() => {
-      if (simulateFailure && done === 3) {
+      if (simulateFailure && done === 2) {
         clearInterval(timer);
         const err = new Error('Simulated failure: "Breach database" timed out. Nothing was changed.');
         err.sourcesProcessed = done;
         reject(err);
         return;
       }
+      done += 1;
+      const current = SOURCES[done - 1];
+      const percent = Math.round((done / SOURCES.length) * 100);
+      onProgress?.(percent, current, done);
+
       if (done >= SOURCES.length) {
         clearInterval(timer);
         resolve({
           date: new Date().toISOString().slice(0, 16).replace('T', ' '),
           status: 'Completed',
-          findings: initialFindings.length, // demo: always the same sample findings
+          findings: initialFindings.length, // 27 findings
           sources: SOURCES.length,
         });
-        return;
       }
-      done += 1;
-      onProgress?.(Math.round((done / SOURCES.length) * 100), SOURCES[done - 1]);
     }, STEP_MS);
   });
 }
