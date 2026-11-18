@@ -231,3 +231,40 @@ select { width: auto; }
   --sidebar-active-text: #ff8a47;
   --sidebar-box: rgba(255, 255, 255, 0.06);
 }
+
+/* Face Tracking & Matching components */
+.face-preview-container {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+}
+.face-bbox {
+  position: absolute;
+  border: 2px solid var(--success);
+  border-radius: 4px;
+  background: rgba(52, 211, 153, 0.18);
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+.match-card {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  align-items: center;
+}
+.match-card.is-match {
+  border-color: rgba(245, 165, 36, 0.4);
+  background: color-mix(in srgb, var(--high) 6%, var(--surface-2));
+}
+.match-thumb {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+}
+

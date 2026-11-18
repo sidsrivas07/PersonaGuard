@@ -45,6 +45,13 @@ desktop.ini
 .env
 *.env.*
 
+# Temporary uploads / cache
+temp_uploads/
+*.db
+*.sqlite3
+
+
+
 # Logs
 *.log
 
