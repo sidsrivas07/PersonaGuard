@@ -2,8 +2,8 @@
 function describe(score) {
   if (score <= 30) return { label: 'Low exposure', color: 'var(--low)' };
   if (score <= 55) return { label: 'Moderate exposure', color: 'var(--medium)' };
-  if (score <= 75) return { label: 'Elevated exposure', color: 'var(--accent)' };
-  return { label: 'High exposure', color: 'var(--critical)' };
+  if (score <= 75) return { label: 'Elevated exposure', color: 'var(--high)' };
+  return { label: 'Severe exposure', color: 'var(--critical)' };
 }
 
 export default function ExposureScore({ score }) {
@@ -12,7 +12,7 @@ export default function ExposureScore({ score }) {
   const circumference = 2 * Math.PI * radius;
   const filled = (score / 100) * circumference; // how much of the ring to colour
   return (
-    <div className="card score-card">
+    <div className="hero-card score-card">
       <svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label={`Exposure score ${score} out of 100`}>
         <circle cx="70" cy="70" r={radius} fill="none" stroke="var(--surface-3)" strokeWidth="12" />
         <circle cx="70" cy="70" r={radius} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
