@@ -261,6 +261,14 @@ code {
   padding: 6px 8px 14px;
   color: #FFFFFF;
 }
+.brand-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+}
 .brand-mark {
   display: grid;
   place-items: center;

@@ -1,4 +1,4 @@
-import { LayoutDashboard, User, Radar, ListChecks, ShieldCheck, Bell, FileText, Settings, ShieldAlert, FileCheck } from 'lucide-react';
+import { LayoutDashboard, User, Radar, ListChecks, ShieldCheck, Bell, FileText, Settings } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const NAV_ITEMS = [
@@ -22,8 +22,8 @@ export default function Sidebar({ open, onNavigate }) {
     <nav className={`sidebar ${open ? 'open' : ''}`} aria-label="Main navigation">
       {/* Brand */}
       <div className="brand">
-        <span className="brand-mark" aria-hidden="true"><ShieldAlert size={18} /></span>
-        PersonaGuard
+        <img src="/logo.png" alt="" className="brand-logo" width="32" height="32" />
+        <span>PersonaGuard</span>
       </div>
 
       {/* Nav links */}
