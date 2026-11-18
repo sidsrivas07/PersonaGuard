@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
-  BASE_SCORE, TREND_HISTORY, initialFindings, initialRemediation, initialAlerts,
+  computeExposureScore, TREND_HISTORY, initialFindings, initialRemediation, initialAlerts,
   initialScans, initialProfile, initialSettings,
 } from '../data/mockData';
 import { startScan } from '../services/scanService';
@@ -15,7 +15,15 @@ function usePersistentState(key, initialValue) {
   const [value, setValue] = useState(() => {
     try {
       const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : initialValue;
+      if (!saved) return initialValue;
+      const parsed = JSON.parse(saved);
+      // Validate schema consistency for findings to ensure maskedValue exists
+      if (key === 'pg_findings' && Array.isArray(parsed)) {
+        if (parsed.length !== initialValue.length || !parsed[0]?.maskedValue) {
+          return initialValue;
+        }
+      }
+      return parsed;
     } catch { return initialValue; }
   });
   useEffect(() => {
@@ -90,10 +98,9 @@ export function AppProvider({ children }) {
   const [referencePhoto, setReferencePhoto] = useState(null);
   const [scanState, setScanState] = useState({ status: 'ready', progress: 0, currentSource: '', error: '' });
 
-  // Dynamic calculations
-  const completedImpact = remediation.filter((a) => a.status === 'Completed').reduce((sum, a) => sum + a.impact, 0);
-  const exposureScore = backendScore !== null ? backendScore : Math.max(0, BASE_SCORE - completedImpact);
+  // Dynamic calculations: exposureScore is strictly derived from open findings
   const openFindings = findings.filter((f) => f.status !== 'Resolved');
+  const exposureScore = computeExposureScore(findings);
   const severityCounts = ['Critical', 'High', 'Medium', 'Low'].map((name) => ({
     name, value: openFindings.filter((f) => f.severity === name).length,
   }));

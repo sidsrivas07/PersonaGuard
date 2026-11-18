@@ -32,13 +32,13 @@ export default function Dashboard() {
         </div>
         <button className="btn primary" onClick={startDemoScan}><Play size={16} />Start demonstration scan</button>
       </div>
-      <DemoNotice>Demonstration data from the project presentation (68/100, 27 findings, 4 critical, 6 sources).</DemoNotice>
+      <DemoNotice>Demonstration data from the project presentation ({exposureScore}/100, {findings.length} findings, {critical} critical, {SOURCES.length} sources).</DemoNotice>
 
       <ExposureScore score={exposureScore} />
 
       <div className="grid-4">
-        <StatCard value={exposureScore} suffix="/100" label="Exposure score" tone="accent" />
         <StatCard value={findings.length} label="Total findings" />
+        <StatCard value={openFindings.length} label="Open findings" />
         <StatCard value={critical} label="Critical findings (open)" tone="critical" />
         <StatCard value={SOURCES.length} label="Sources scanned" />
       </div>

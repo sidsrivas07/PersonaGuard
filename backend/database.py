@@ -72,6 +72,7 @@ class Finding(Base):
     severity = Column(String(20), nullable=False)  # Critical, High, Medium, Low
     date_found = Column(String(20), nullable=False)
     recommended_action = Column(Text, nullable=False)
+    masked_value = Column(String(200), nullable=True)
     status = Column(String(20), default="Open")     # Open, Reviewing, Resolved
     confidence = Column(Integer, default=85)
 
@@ -84,6 +85,7 @@ class Finding(Base):
             "severity": self.severity,
             "dateFound": self.date_found,
             "recommendedAction": self.recommended_action,
+            "maskedValue": self.masked_value,
             "status": self.status,
             "confidence": self.confidence,
         }
@@ -168,20 +170,19 @@ def calculate_exposure_score(db) -> int:
     """
     Calculate the live Exposure Score (0-100, lower is safer).
     Formula:
-      - Base points for unresolved findings (Critical: 8, High: 5, Medium: 3, Low: 1)
-      - Minus impact points for completed remediation actions
-      - Clamped between 10 and 95 for realistic security posture
+      Open findings weighted by severity:
+        Critical: 7.5
+        High:     3.0
+        Medium:   1.5
+        Low:      0.5
+      Score = Math.min(100, Math.round(sum of weights of open findings))
+      Initial open state:
+        4 * 7.5 (30) + 7 * 3.0 (21) + 9 * 1.5 (13.5) + 7 * 0.5 (3.5) = exactly 68.
     """
     unresolved_findings = db.query(Finding).filter(Finding.status != "Resolved").all()
-    completed_actions = db.query(RemediationAction).filter(RemediationAction.status == "Completed").all()
-
-    weight_map = {"Critical": 8, "High": 5, "Medium": 3, "Low": 1}
-    raw_risk = sum(weight_map.get(f.severity, 2) for f in unresolved_findings)
-    remediation_benefit = sum(a.impact for a in completed_actions)
-
-    score = raw_risk - remediation_benefit
-    # Clamp between 10 and 95
-    return max(10, min(95, score))
+    weight_map = {"Critical": 7.5, "High": 3.0, "Medium": 1.5, "Low": 0.5}
+    raw_risk = sum(weight_map.get(f.severity, 0.5) for f in unresolved_findings)
+    return min(100, max(0, round(raw_risk)))
 
 
 # ── Database Initialization & Seeding ────────────────────────────────
@@ -212,33 +213,37 @@ def init_db():
         # 2. Seed Findings if not present
         if db.query(Finding).count() == 0:
             seed_rows = [
-                ('E-mail found in a 2021 credential dump', 'Breach database', 'Breach', 'Critical', '2026-10-14', 'Change password and enable 2FA', 'Open'),
-                ('Password hash in a simulated paste dump', 'Breach database', 'Breach', 'Critical', '2026-10-14', 'Change reused passwords; use a password manager', 'Open'),
-                ('Phone and e-mail in a leaked marketing list', 'Breach database', 'Contact info', 'Critical', '2026-10-12', 'Change credentials and watch for phishing', 'Open'),
-                ('Date of birth and home address in a directory listing', 'Public web search', 'Personal details', 'Critical', '2026-10-12', 'Send a removal request to the directory', 'Open'),
-                ('Mobile number visible on public profile', 'LinkedIn (public)', 'Contact info', 'High', '2026-10-14', 'Hide contact info', 'Reviewing'),
-                ('Commit history exposes personal e-mail', 'GitHub (public)', 'Contact info', 'High', '2026-10-13', 'Use the no-reply commit e-mail', 'Open'),
-                ('Old forum profile lists phone number', 'Public web search', 'Contact info', 'High', '2026-10-13', 'Edit or delete the forum profile', 'Open'),
-                ('Public résumé PDF shows home address', 'Public web search', 'Personal details', 'High', '2026-10-11', 'Remove the address from the résumé', 'Open'),
-                ('Handle linked to full name on an old account', 'Public web search', 'Social profile', 'High', '2026-10-11', 'Review account visibility', 'Open'),
-                ('Public friends list reveals family members', 'Public web search', 'Social profile', 'High', '2026-10-10', 'Set the friends list to private', 'Open'),
-                ('Candidate image match on a public page (simulated)', 'Simulated demo dataset', 'Image match', 'High', '2026-10-10', 'Review the match, then confirm or reject it', 'Open'),
-                ('Home city, school name and date of birth', 'Personal blog, 2019', 'Personal details', 'Medium', '2026-10-09', 'Request removal', 'Reviewing'),
-                ('Bio shows city and workplace', 'LinkedIn (public)', 'Social profile', 'Medium', '2026-10-09', 'Shorten the public bio', 'Open'),
-                ('Old Q&A profile uses real name', 'Public web search', 'Social profile', 'Medium', '2026-10-08', 'Deactivate the unused profile', 'Open'),
-                ('Alumni directory lists graduation year', 'Public web search', 'Personal details', 'Medium', '2026-10-08', 'Ask the directory to hide it', 'Open'),
-                ('Public comments reveal daily routine', 'Personal blog, 2019', 'Personal details', 'Medium', '2026-10-07', 'Remove or edit the comments', 'Open'),
-                ('Event attendance list is public', 'Public web search', 'Social profile', 'Medium', '2026-10-07', 'Make attendance private', 'Open'),
-                ('Public repos list a university e-mail', 'GitHub (public)', 'Contact info', 'Medium', '2026-10-06', 'Replace with a no-reply address', 'Open'),
-                ('Profile photo reused across sites (simulated)', 'Simulated demo dataset', 'Image match', 'Medium', '2026-10-06', 'Use different photos per site', 'Open'),
-                ('Old portfolio page shows age', 'Personal blog, 2019', 'Personal details', 'Medium', '2026-10-05', 'Remove the age line', 'Open'),
-                ('Username reused on a gaming forum', 'Public web search', 'Social profile', 'Low', '2026-10-05', 'Use unique usernames', 'Open'),
-                ('Public follower count and interests', 'LinkedIn (public)', 'Social profile', 'Low', '2026-10-04', 'Limit who can see connections', 'Open'),
-                ('Old blog post mentions hobbies', 'Personal blog, 2019', 'Personal details', 'Low', '2026-10-04', 'Archive the post', 'Open'),
-                ('Starred repositories reveal interests', 'GitHub (public)', 'Social profile', 'Low', '2026-10-03', 'Hide starred repositories', 'Open'),
-                ('Search snippet shows full name', 'Public web search', 'Personal details', 'Low', '2026-10-03', 'No action needed; monitor', 'Open'),
-                ('Outdated bio on inactive profile', 'LinkedIn (public)', 'Social profile', 'Low', '2026-10-02', 'Update or remove the bio', 'Open'),
-                ('Username appears on a public tag page', 'Public web search', 'Social profile', 'Low', '2026-10-02', 'No action needed; monitor', 'Open'),
+                # 4 Critical (4 * 7.5 = 30)
+                ('E-mail found in a 2021 credential dump', 'Breach database', 'Breach', 'Critical', 's***@example.com', '2026-10-14', 'Change password and enable 2FA', 'Open'),
+                ('Password hash in a simulated paste dump', 'Breach database', 'Breach', 'Critical', 'sha256:7f83b165...', '2026-10-14', 'Change reused passwords; use a password manager', 'Open'),
+                ('Phone and e-mail in a leaked marketing list', 'Breach database', 'Contact info', 'Critical', '+91 98****21', '2026-10-12', 'Change credentials and watch for phishing', 'Open'),
+                ('Date of birth and home address in a directory listing', 'Public web search', 'Personal details', 'Critical', '14/08/****, 42 Elm St.', '2026-10-12', 'Send a removal request to the directory', 'Open'),
+                # 7 High (7 * 3.0 = 21)
+                ('Mobile number visible on public profile', 'LinkedIn (public)', 'Contact info', 'High', '+91 90****00', '2026-10-14', 'Hide contact info', 'Open'),
+                ('Commit history exposes personal e-mail', 'GitHub (public)', 'Contact info', 'High', 'sid.srivas0402@***.com', '2026-10-13', 'Use the no-reply commit e-mail', 'Open'),
+                ('Old forum profile lists phone number', 'Public web search', 'Contact info', 'High', '+91 91****34', '2026-10-13', 'Edit or delete the forum profile', 'Open'),
+                ('Public résumé PDF shows home address', 'Public web search', 'Personal details', 'High', 'Flat 4B, Green Park...', '2026-10-11', 'Remove the address from the résumé', 'Open'),
+                ('Handle linked to full name on an old account', 'Public web search', 'Social profile', 'High', '@sid_srivas07', '2026-10-11', 'Review account visibility', 'Open'),
+                ('Public friends list reveals family members', 'Public web search', 'Social profile', 'High', '8 close relatives visible', '2026-10-10', 'Set the friends list to private', 'Open'),
+                ('Candidate image match on a public page (simulated)', 'Simulated demo dataset', 'Image match', 'High', 'candidate_1.jpg (91% sim)', '2026-10-10', 'Review the match, then confirm or reject it', 'Open'),
+                # 9 Medium (9 * 1.5 = 13.5)
+                ('Home city, school name and date of birth', 'Personal blog, 2019', 'Personal details', 'Medium', 'Bengaluru, 199*', '2026-10-09', 'Request removal', 'Open'),
+                ('Bio shows city and workplace', 'LinkedIn (public)', 'Social profile', 'Medium', 'Senior Engineer @ ...', '2026-10-09', 'Shorten the public bio', 'Open'),
+                ('Old Q&A profile uses real name', 'Public web search', 'Social profile', 'Medium', 'User "Siddhant S."', '2026-10-08', 'Deactivate the unused profile', 'Open'),
+                ('Alumni directory lists graduation year', 'Public web search', 'Personal details', 'Medium', 'B.Tech, Class of 202*', '2026-10-08', 'Ask the directory to hide it', 'Open'),
+                ('Public comments reveal daily routine', 'Personal blog, 2019', 'Personal details', 'Medium', '3 posts with schedule info', '2026-10-07', 'Remove or edit the comments', 'Open'),
+                ('Event attendance list is public', 'Public web search', 'Social profile', 'Medium', 'PersonaConf 2026 attendee', '2026-10-07', 'Make attendance private', 'Open'),
+                ('Public repos list a university e-mail', 'GitHub (public)', 'Contact info', 'Medium', 'sid@univ.edu', '2026-10-06', 'Replace with a no-reply address', 'Open'),
+                ('Profile photo reused across sites (simulated)', 'Simulated demo dataset', 'Image match', 'Medium', 'avatar_photo.png', '2026-10-06', 'Use different photos per site', 'Open'),
+                ('Old portfolio page shows age', 'Personal blog, 2019', 'Personal details', 'Medium', 'Age: 2*', '2026-10-05', 'Remove the age line', 'Open'),
+                # 7 Low (7 * 0.5 = 3.5)
+                ('Username reused on a gaming forum', 'Public web search', 'Social profile', 'Low', 'sid_gamer_99', '2026-10-05', 'Use unique usernames', 'Open'),
+                ('Public follower count and interests', 'LinkedIn (public)', 'Social profile', 'Low', '500+ connections visible', '2026-10-04', 'Limit who can see connections', 'Open'),
+                ('Old blog post mentions hobbies', 'Personal blog, 2019', 'Personal details', 'Low', 'Rock climbing, photography', '2026-10-04', 'Archive the post', 'Open'),
+                ('Starred repositories reveal interests', 'GitHub (public)', 'Social profile', 'Low', '14 private tool forks', '2026-10-03', 'Hide starred repositories', 'Open'),
+                ('Search snippet shows full name', 'Public web search', 'Personal details', 'Low', 'Siddhant Srivastava', '2026-10-03', 'No action needed; monitor', 'Open'),
+                ('Outdated bio on inactive profile', 'LinkedIn (public)', 'Social profile', 'Low', 'Student at...', '2026-10-02', 'Update or remove the bio', 'Open'),
+                ('Username appears on a public tag page', 'Public web search', 'Social profile', 'Low', '@sid_srivas07 tagged in 2 photos', '2026-10-02', 'No action needed; monitor', 'Open'),
             ]
             for i, r in enumerate(seed_rows):
                 f = Finding(
@@ -247,9 +252,10 @@ def init_db():
                     source=r[1],
                     category=r[2],
                     severity=r[3],
-                    date_found=r[4],
-                    recommended_action=r[5],
-                    status=r[6],
+                    masked_value=r[4],
+                    date_found=r[5],
+                    recommended_action=r[6],
+                    status=r[7],
                     confidence=78 + ((i * 7) % 20),
                 )
                 db.add(f)
