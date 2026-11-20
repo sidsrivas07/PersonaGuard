@@ -22,24 +22,58 @@ export default function Findings() {
     (!text || [f.title, f.source, f.category].some((v) => v.toLowerCase().includes(text)))
   );
 
+  const clearFilters = () => {
+    setQuery('');
+    setSeverity('All');
+    setStatus('All');
+  };
+
   return (
     <div className="stack">
-      <DemoNotice>Sample findings for demonstration, including a simulated credential-breach notification.</DemoNotice>
+      <DemoNotice>Simulated demonstration audit findings across 6 public intelligence sources.</DemoNotice>
       <div className="card stack">
         <div className="row gap wrap">
-          <div className="search"><Search size={16} /><input placeholder="Search title, source or category" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
+          <div className="search">
+            <Search size={16} aria-hidden="true" />
+            <input
+              placeholder="Search title, source, or category"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search findings"
+            />
+          </div>
           <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="All">All statuses</option><option>Open</option><option>Reviewing</option><option>Resolved</option>
+            <option value="All">All statuses</option>
+            <option>Open</option>
+            <option>Reviewing</option>
+            <option>Resolved</option>
           </select>
         </div>
-        <div className="row gap wrap">
+        <div className="row gap wrap" role="group" aria-label="Filter by severity">
           {SEVERITIES.map((s) => (
-            <button key={s} className={`chip ${severity === s ? 'active' : ''}`} onClick={() => setSeverity(s)}>{s}</button>
+            <button
+              key={s}
+              className={`chip ${severity === s ? 'active' : ''}`}
+              onClick={() => setSeverity(s)}
+              aria-pressed={severity === s}
+            >
+              {s}
+            </button>
           ))}
         </div>
         <p className="muted small">Showing {visible.length} of {findings.length} findings</p>
         {visible.length === 0
-          ? <div className="empty"><strong>No findings match.</strong><p className="muted">Clear the search or choose a different filter.</p></div>
+          ? (
+            <div className="empty" role="status">
+              <strong>No findings match your filter.</strong>
+              <p className="muted" style={{ marginTop: 4 }}>
+                Try adjusting your search query, severity, or remediation status.
+              </p>
+              <button className="btn btn-sm" onClick={clearFilters} style={{ marginTop: 12 }}>
+                Reset all filters
+              </button>
+            </div>
+          )
           : <FindingsTable findings={visible} onSelect={(f) => setSelectedId(f.id)} />}
       </div>
       {selectedId && <FindingDetail findingId={selectedId} onClose={() => setSelectedId(null)} />}
